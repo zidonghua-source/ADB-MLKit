@@ -5,14 +5,14 @@ plugins {
 android {
     namespace = 'io.github.adbmlkit.helper'
     compileSdk = 37
-    buildToolsVersion = '0.1.1'
+    buildToolsVersion = '36.0.0'
 
     defaultConfig {
         applicationId = 'io.github.adbmlkit.helper'
         minSdk = 23
         targetSdk = 37
         versionCode = 2
-        versionName = '0.1.0'
+        versionName = '0.1.1'
     }
 
     // This is a run-as SDK helper, not a user-facing production application.

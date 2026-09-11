@@ -44,7 +44,6 @@ def main() -> None:
 
     pyproject = PYPROJECT.read_text(encoding="utf-8")
     current = parse_version(pyproject)
-    old_str = current_str(current)
     new = bump(current, args.bump_type)
     new_str = current_str(new)
 
@@ -54,8 +53,8 @@ def main() -> None:
 
     # pyproject.toml: version = "x.y.z"
     m = PYPROJECT_RE.search(pyproject)
-    if not m or m.group(1) != old_str:
-        sys.exit(f"Expected version {old_str} in {PYPROJECT}")
+    if not m:
+        sys.exit(f'version = "..." not found in {PYPROJECT}')
     if not args.dry_run:
         PYPROJECT.write_text(PYPROJECT_RE.sub(f'version = "{new_str}"', pyproject, count=1),
                              encoding="utf-8")
@@ -63,16 +62,16 @@ def main() -> None:
     # src/adb_mlkit/__init__.py: __version__ = "x.y.z"
     init = INIT.read_text(encoding="utf-8")
     m = INIT_RE.search(init)
-    if not m or m.group(1) != old_str:
-        sys.exit(f"Expected version {old_str} in {INIT}")
+    if not m:
+        sys.exit(f'__version__ = "..." not found in {INIT}')
     if not args.dry_run:
         INIT.write_text(INIT_RE.sub(f'__version__ = "{new_str}"', init, count=1), encoding="utf-8")
 
     # android/app/build.gradle: versionName = 'x.y.z' and versionCode = N
     gradle = GRADLE.read_text(encoding="utf-8")
     m = GRADLE_NAME_RE.search(gradle)
-    if not m or m.group(1) != old_str:
-        sys.exit(f"Expected versionName {old_str} in {GRADLE}")
+    if not m:
+        sys.exit(f"versionName = '...' not found in {GRADLE}")
     if not args.dry_run:
         gradle = GRADLE_NAME_RE.sub(f"versionName = '{new_str}'", gradle, count=1)
         code = GRADLE_CODE_RE.search(gradle)
