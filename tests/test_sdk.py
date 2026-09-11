@@ -10,6 +10,7 @@ from unittest.mock import patch, Mock
 
 from adb_mlkit import ADBMLKit, ADBMLKitError, OCRResult, script_for_language
 from adb_mlkit.cli import main
+from adb_mlkit.client import PACKAGE
 
 RID = "a" * 32
 PNG = b"\x89PNG\r\n\x1a\n\x00\xff"
@@ -77,7 +78,7 @@ class SDKTests(unittest.TestCase):
     def test_success_base64_unique_directory_cleanup(self):
         with patch.object(self.client, "_select_device"), \
                 patch("adb_mlkit.client.uuid.uuid4", return_value=Mock(hex=RID)), \
-                patch.object(self.client, "_shell", return_value=b"OK") as shell, \
+                patch.object(self.client, "_shell", return_value=f"package:{PACKAGE}\r\n".encode()) as shell, \
                 patch.object(self.client, "_exec", return_value=json.dumps(response()).encode()):
             result = self.client.recognize_bytes(PNG, language="vi", runs=2)
         transfers = [call for call in shell.call_args_list if "payload" in call.kwargs]
@@ -92,9 +93,104 @@ class SDKTests(unittest.TestCase):
 
     def test_failure_cleanup_preserves_original_error(self):
         with patch.object(self.client, "_select_device"), \
-                patch.object(self.client, "_shell", side_effect=[b"", ADBMLKitError("upload"), ADBMLKitError("cleanup")]):
+                patch.object(self.client, "_shell", side_effect=[f"package:{PACKAGE}\n".encode(), b"",
+                                                              ADBMLKitError("upload"), ADBMLKitError("cleanup")]):
             with self.assertWarns(RuntimeWarning), self.assertRaisesRegex(ADBMLKitError, "upload"):
                 self.client.recognize_bytes(PNG)
+
+    def test_helper_presence_exact_match(self):
+        for output, installed in ((b"", False),
+                                  (f"package:{PACKAGE}.other\n".encode(), False),
+                                  (f"package:{PACKAGE}\r\n".encode(), True)):
+            with self.subTest(output=output), \
+                    patch.object(self.client, "_shell", return_value=output) as shell, \
+                    patch.object(self.client, "install") as install:
+                self.client._ensure_helper()
+                shell.assert_called_once_with("pm", "list", "packages", PACKAGE)
+                if installed:
+                    install.assert_not_called()
+                else:
+                    install.assert_called_once_with()
+
+    def test_auto_install_before_staging_and_recheck_each_recognition(self):
+        installed = False
+
+        def install_helper():
+            nonlocal installed
+            installed = True
+            return "Success"
+
+        def shell_command(*args, **kwargs):
+            if args[:3] == ("pm", "list", "packages"):
+                return f"package:{PACKAGE}\n".encode() if installed else b""
+            self.assertTrue(installed, "Helper must be installed before staging or OCR")
+            return b""
+
+        with patch.object(self.client, "_select_device"), \
+                patch("adb_mlkit.client.uuid.uuid4", return_value=Mock(hex=RID)), \
+                patch.object(self.client, "_shell", side_effect=shell_command) as shell, \
+                patch.object(self.client, "install", side_effect=install_helper) as install, \
+                patch.object(self.client, "_exec", return_value=json.dumps(response()).encode()):
+            for _ in range(2):
+                result = self.client.recognize_bytes(PNG)
+                self.assertIn("setup_ms", result.host_timing)
+                self.assertGreaterEqual(result.host_timing["total_ms"], result.host_timing["setup_ms"])
+            install.assert_called_once_with()
+            installed = False
+            self.client.recognize_bytes(PNG)
+            self.assertEqual(install.call_count, 2)
+        checks = [c for c in shell.call_args_list if c.args[:3] == ("pm", "list", "packages")]
+        self.assertEqual(len(checks), 3)
+
+    def test_helper_check_error_does_not_install_or_stage(self):
+        with patch.object(self.client, "_select_device"), \
+                patch.object(self.client, "_shell", side_effect=ADBMLKitError("device offline")) as shell, \
+                patch.object(self.client, "install") as install, \
+                patch.object(self.client, "_exec") as execute:
+            with self.assertRaisesRegex(ADBMLKitError, "device offline"):
+                self.client.recognize_bytes(PNG)
+        shell.assert_called_once_with("pm", "list", "packages", PACKAGE)
+        install.assert_not_called()
+        execute.assert_not_called()
+
+    def test_auto_install_failure_does_not_stage(self):
+        with patch.object(self.client, "_select_device"), \
+                patch.object(self.client, "_shell", return_value=b"") as shell, \
+                patch.object(self.client, "install", side_effect=ADBMLKitError("install denied")), \
+                patch.object(self.client, "_exec") as execute:
+            with self.assertRaisesRegex(ADBMLKitError, "install denied"):
+                self.client.recognize_bytes(PNG)
+        shell.assert_called_once_with("pm", "list", "packages", PACKAGE)
+        execute.assert_not_called()
+
+    def test_device_selection_failure_does_not_install(self):
+        with patch.object(self.client, "devices", return_value=[]), \
+                patch.object(self.client, "install") as install, \
+                patch.object(self.client, "_shell") as shell:
+            with self.assertRaisesRegex(ADBMLKitError, "not connected/authorized"):
+                self.client.recognize_bytes(PNG)
+        install.assert_not_called()
+        shell.assert_not_called()
+
+    def test_info_does_not_install_missing_helper(self):
+        with patch.object(self.client, "_select_device"), \
+                patch.object(self.client, "_shell", side_effect=[b"23", b"test", b""]), \
+                patch.object(self.client, "install") as install:
+            self.assertFalse(self.client.info()["helper_installed"])
+        install.assert_not_called()
+
+    def test_cli_json_with_auto_install(self):
+        output = StringIO()
+        with patch("adb_mlkit.cli.ADBMLKit", return_value=self.client), \
+                patch.object(self.client, "_select_device"), \
+                patch("adb_mlkit.client.uuid.uuid4", return_value=Mock(hex=RID)), \
+                patch.object(self.client, "_shell", return_value=b""), \
+                patch.object(self.client, "install", return_value="Success") as install, \
+                patch.object(self.client, "_exec", side_effect=[PNG, json.dumps(response()).encode()]), \
+                redirect_stdout(output):
+            self.assertEqual(main(["recognize", "--screenshot", "--json"]), 0)
+        install.assert_called_once_with()
+        self.assertEqual(json.loads(output.getvalue())["text"], "Tiếng Việt")
 
     def test_result_validation(self):
         for data in (response(id="wrong"), response(schema_version=2), response(schema_version=True),
@@ -135,7 +231,7 @@ class SDKTests(unittest.TestCase):
     def test_request_matches_android_schema(self):
         with patch.object(self.client, "_select_device"), \
                 patch("adb_mlkit.client.uuid.uuid4", return_value=Mock(hex=RID)), \
-                patch.object(self.client, "_shell", return_value=b"") as shell, \
+                patch.object(self.client, "_shell", return_value=f"package:{PACKAGE}\n".encode()) as shell, \
                 patch.object(self.client, "_exec", return_value=json.dumps(response(script="japanese")).encode()):
             self.client.recognize_bytes(PNG, script="japanese", roi=(1, 2, 50, 60), rotation=90)
         transfers = [c for c in shell.call_args_list if "payload" in c.kwargs]
@@ -147,7 +243,7 @@ class SDKTests(unittest.TestCase):
 
     def test_invalid_json_cleans_request(self):
         with patch.object(self.client, "_select_device"), \
-                patch.object(self.client, "_shell", return_value=b"") as shell, \
+                patch.object(self.client, "_shell", return_value=f"package:{PACKAGE}\n".encode()) as shell, \
                 patch.object(self.client, "_exec", return_value=b"not json"):
             with self.assertRaisesRegex(ADBMLKitError, "invalid UTF-8 JSON"):
                 self.client.recognize_bytes(PNG)

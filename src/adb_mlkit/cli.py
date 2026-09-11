@@ -21,7 +21,7 @@ def parser():
     install = commands.add_parser("install", help="Explicitly install bundled helper or a custom APK")
     install.add_argument("apk", type=Path, nargs="?", help="Optional custom APK; default is the bundled helper")
     for name in ("recognize", "batch"):
-        command = commands.add_parser(name)
+        command = commands.add_parser(name, description="Read text; automatically install the bundled helper if missing")
         if name == "recognize":
             source = command.add_mutually_exclusive_group(required=True)
             source.add_argument("--file", type=Path)

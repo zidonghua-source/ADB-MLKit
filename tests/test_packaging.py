@@ -51,7 +51,7 @@ class PackagingTests(unittest.TestCase):
                     with bundled_apk():
                         pass
 
-    def test_default_install_only_explicit(self):
+    def test_default_install_uses_bundled_apk(self):
         client = ADBMLKit(serial="test")
         with tempfile.TemporaryDirectory() as tmp:
             self.assets(tmp)
@@ -60,6 +60,33 @@ class PackagingTests(unittest.TestCase):
                     patch.object(client, "_adb", return_value=b"Success") as adb:
                 self.assertEqual(client.install(), "Success")
             self.assertEqual(adb.call_args.args[0][:2], ["install", "-r"])
+
+    def test_auto_install_uses_verified_bundled_apk(self):
+        client = ADBMLKit(serial="test")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assets(tmp)
+            with patch("adb_mlkit.helper.files", return_value=Path(tmp)), \
+                    patch.object(client, "_select_device"), \
+                    patch.object(client, "_shell", return_value=b""), \
+                    patch.object(client, "_adb", return_value=b"Success") as adb:
+                client._ensure_helper()
+            adb.assert_called_once_with(
+                ["install", "-r", str((Path(tmp) / "assets" / "adb-mlkit.apk").resolve())], timeout=180)
+
+    def test_auto_install_rejects_missing_or_corrupt_apk(self):
+        client = ADBMLKit(serial="test")
+        for error in ("missing", "checksum"):
+            with self.subTest(error=error), tempfile.TemporaryDirectory() as tmp:
+                if error == "checksum":
+                    self.assets(tmp, digest="bad")
+                with patch("adb_mlkit.helper.files", return_value=Path(tmp)), \
+                        patch.object(client, "_select_device"), \
+                        patch.object(client, "_shell", return_value=b"") as shell, \
+                        patch.object(client, "_adb") as adb:
+                    with self.assertRaisesRegex(ADBMLKitError, error):
+                        client.recognize_bytes(b"image")
+                self.assertEqual(shell.call_count, 1)
+                adb.assert_not_called()
 
     def test_cli_optional_apk(self):
         with patch("adb_mlkit.cli.ADBMLKit") as client, redirect_stdout(StringIO()):

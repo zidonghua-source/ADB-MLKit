@@ -86,13 +86,21 @@ class ADBMLKit:
             raise ADBMLKitError(f"Expected one authorized device, found {available}; specify serial")
         return self.serial
 
+    def _helper_installed(self):
+        packages = self._shell("pm", "list", "packages", PACKAGE).splitlines()
+        return f"package:{PACKAGE}".encode() in packages
+
+    def _ensure_helper(self):
+        if not self._helper_installed():
+            self.install()
+
     def info(self):
         with self._lock:
             self._select_device()
             return {"serial": self.serial,
                     "android_api": self._shell("getprop", "ro.build.version.sdk").decode().strip(),
                     "model": self._shell("getprop", "ro.product.model").decode().strip(),
-                    "helper_installed": self._shell("pm", "path", PACKAGE).startswith(b"package:"),
+                    "helper_installed": self._helper_installed(),
                     "package": PACKAGE, "scripts": list(SCRIPTS), "protocol_version": 1}
 
     def install(self, apk=None):
@@ -159,6 +167,8 @@ class ADBMLKit:
                         roi = list(source_roi)
                     if not isinstance(image, bytes) or not 0 < len(image) <= MAX_INPUT_BYTES:
                         raise ValueError("Input must contain 1..32 MiB of encoded image bytes")
+                with self._stage(timing, "setup_ms"):
+                    self._ensure_helper()
                 request = {"schema_version": 1, "id": request_id, "script": script,
                            "source": {"type": "private", "path": image_path},
                            "rotation": rotation, "roi": roi, "runs": runs}
