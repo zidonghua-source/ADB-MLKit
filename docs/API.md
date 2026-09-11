@@ -21,6 +21,8 @@ Construction/import does not contact a device. Without `serial`, exactly one aut
 | `recognize_xpath(xpath, xpath_timeout=10, **options)` | Optional uiautomator2 lookup supplies screenshot ROI; returns `OCRResult` |
 | `batch_files(paths, **options)` | Sequential list of local files; returns list of results, stops on first error |
 
+All recognition methods (including batch) check for the helper on the selected device before staging input. If missing, they install the bundled checksum-verified APK automatically. An existing helper is not reinstalled or upgraded; use `install()` explicitly for updates or a custom APK. Package-query and installation failures abort recognition without staging a request. Construction, `devices()` and `info()` never install an APK.
+
 Every successful recognition deletes its own temporary request directory on the device. Cleanup is also attempted after errors; failures generate a warning without replacing the original error. Process termination/disconnection may leave residual data.
 
 ## Common recognition options
@@ -40,7 +42,7 @@ These options do not request translation or linguistic correction. Model choice 
 - `id`, `schema_version`, `ok`, `text`, `script`.
 - `image`: original width/height, output width/height, rotation and ROI metadata.
 - `timing`: Android `decode_ms`, `init_ms`, `runs_ms`.
-- `host_timing`: host `load_ms`, `transfer_ms`, `instrumentation_ms`, `result_ms`, `cleanup_ms`, `total_ms`. Host instrumentation time includes all runs plus process and ADB overhead. Timers overlap conceptually: do not add Android OCR times to host total.
+- `host_timing`: host `load_ms`, `setup_ms`, `transfer_ms`, `instrumentation_ms`, `result_ms`, `cleanup_ms`, `total_ms`. Setup measures the helper-presence check and any automatic installation; total includes setup, so the first call may take longer. Host instrumentation time includes all runs plus process and ADB overhead. Timers overlap conceptually: do not add Android OCR times to host total.
 - `blocks`: `TextBlock` objects with text, geometry, language and `lines`.
 - `lines`: `TextLine` objects with nullable confidence and `elements`.
 - `elements`: `TextElement` objects with text, geometry, recognized language and nullable confidence.
@@ -83,4 +85,4 @@ Recognition options:
   --overwrite
 ```
 
-`--json` produces structured output only on stdout; normal text output puts timing diagnostics on stderr. `--output` saves the chosen representation to UTF-8 instead of stdout. Existing output files require explicit `--overwrite`. Batch JSON is an array in the input order. Ordinary operational errors return exit code 1; argparse usage errors return 2. No command silently installs the helper except explicit `install`.
+`--json` produces structured output only on stdout; normal text output puts timing diagnostics on stderr. `--output` saves the chosen representation to UTF-8 instead of stdout. Existing output files require explicit `--overwrite`. Batch JSON is an array in the input order. Ordinary operational errors return exit code 1; argparse usage errors return 2. `recognize` and `batch` automatically install the bundled helper if missing, without adding installation output to stdout. `install [APK]` remains available for explicit installation/updates.

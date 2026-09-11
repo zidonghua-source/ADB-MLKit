@@ -20,13 +20,14 @@ python -m venv .venv
 python -m pip install .\dist\adb_mlkit-0.1.0-py3-none-any.whl
 ```
 
-Wheel đã chứa APK và cả 5 model, không cần tự build Android. ADB/platform-tools vẫn phải cài riêng. Lệnh pip không tự cài app lên điện thoại; cài rõ ràng bằng:
+Wheel đã chứa APK và cả 5 model, không cần tự build Android. ADB/platform-tools vẫn phải cài riêng. Lệnh pip không tự cài app lên điện thoại; khi chạy lệnh đọc văn bản, SDK sẽ tự kiểm tra và cài APK đi kèm đã được xác minh checksum nếu thiết bị chưa có:
 
 ```powershell
 adb-mlkit devices
-adb-mlkit install
 adb-mlkit recognize --screenshot --language vi --runs 3 --json
 ```
+
+Không cần chạy `adb-mlkit install` trước. Cơ chế này áp dụng cho `recognize`, `batch` và các hàm đọc văn bản trong API Python. Nếu APK đã có thì không tự cài lại hay cập nhật. Vẫn có thể dùng `adb-mlkit install` để cài/cập nhật thủ công, hoặc `adb-mlkit install path/to/custom.apk` để chọn APK khác. Nếu cài thất bại, OCR dừng và báo lỗi; SDK không tự gỡ APK hiện có để xử lý xung đột.
 
 Sau khi chủ repo phát hành lên PyPI, người dùng sẽ cài bằng `pip install adb-mlkit` hoặc `pip install "adb-mlkit[ui]"`. Hiện việc chuẩn bị source/wheel chưa đồng nghĩa đã đăng lên PyPI. Xem [hướng dẫn phát hành](docs/PUBLISHING.md).
 
@@ -78,7 +79,7 @@ Chọn thiết bị cụ thể: `ADBMLKit(serial="SERIAL")` hoặc `adb-mlkit --
 ## Lưu ý quan trọng
 
 - `language="vi"` chọn model Latin, không dịch hoặc ép đầu ra thành tiếng Việt. Không hỗ trợ mọi bộ chữ trên thế giới.
-- `runs=5` đọc **cùng một ảnh** 5 lần. Các lần sau đo model đã nạp; tổng thời gian thật còn có chụp ảnh, truyền ADB và khởi chạy APK.
+- `runs=5` đọc **cùng một ảnh** 5 lần. Các lần sau đo model đã nạp; tổng thời gian thật còn có chụp ảnh, truyền ADB và khởi chạy APK. `host_timing.setup_ms` đo kiểm tra/cài APK; `total_ms` bao gồm cả bước này nên lần đầu có thể lâu hơn.
 - ROI là tọa độ ảnh gốc trước xoay; kết quả là tọa độ sau cắt và xoay, không mặc định là tọa độ màn hình.
 - Giới hạn ảnh 32 MiB/32 triệu pixel. Chất lượng phụ thuộc ảnh, bộ chữ và thiết bị.
 - Một phiên nhận dạng tại một thời điểm cho mỗi điện thoại. Các process riêng phải tự điều phối.

@@ -45,13 +45,14 @@ python -m pip install "adb-mlkit[ui]"
 
 These package-index commands require an actual release; preparing this repository does not publish one. See [PyPI publishing](docs/PUBLISHING.md).
 
-Explicitly install the bundled, checksum-verified helper on the selected phone:
+Run OCR directly. Recognition commands and Python recognition methods automatically install the bundled, checksum-verified helper on the selected phone if it is missing:
 
 ```powershell
-adb-mlkit install
-adb-mlkit info
 adb-mlkit recognize --screenshot --language vi --runs 3 --json
+adb-mlkit info
 ```
+
+An existing helper is not automatically reinstalled or updated. Use `adb-mlkit install` to install/update it manually, or `adb-mlkit install path/to/custom.apk` for a custom APK. Installation errors stop recognition; the SDK never uninstalls an existing package to resolve a conflict.
 
 The new helper package is **`io.github.adbmlkit.helper`**, separate from the earlier `com.example.mlkitocrtest` prototype. The prototype APK cannot serve this protocol.
 
@@ -84,7 +85,7 @@ ocr = ADBMLKit(serial="DEVICE_SERIAL")
 result = ocr.recognize_device_file("/sdcard/Download/example.png", language="vi", runs=3)
 print(result.text)
 print(result.timing)       # Android decode/init/recognition durations
-print(result.host_timing)  # Host load/transfer/instrumentation/result/cleanup/total
+print(result.host_timing)  # Host load/setup/transfer/instrumentation/result/cleanup/total
 
 for block in result.blocks:
     for line in block.lines:
@@ -103,7 +104,7 @@ ML Kit may recognize mixed-script text supported by a selected model, but this p
 
 ROI is `[left, top, right, bottom]` in the original unrotated source image, with exclusive right/bottom edges. Crop precedes rotation. Output geometry uses the cropped, rotated image coordinate system, **not necessarily screen coordinates**. Explicit rotation is used; normalize EXIF orientation yourself when needed.
 
-`runs=N` recognizes **one image N times** using one recognizer in one invocation. The first run can include lazy model initialization; later values measure warm recognition. Each API call starts instrumentation again. Warm OCR time is not end-to-end latency. The host total includes image loading/capture, transfers and cleanup, but not APK installation. No fixed speed or accuracy guarantee is made.
+`runs=N` recognizes **one image N times** using one recognizer in one invocation. The first run can include lazy model initialization; later values measure warm recognition. Each API call starts instrumentation again. Warm OCR time is not end-to-end latency. The host total includes image loading/capture, helper setup, transfers and cleanup. `host_timing.setup_ms` measures the package check and any automatic APK installation; the first call on a device without the helper therefore takes longer. No fixed speed or accuracy guarantee is made.
 
 ## Development and verification
 
