@@ -11,27 +11,43 @@ Project độc lập gồm **SDK/CLI Python** và **APK Android không có giao 
 - Đo riêng thời gian OCR và tổng thời gian xử lý; xuất JSON, đọc nhiều ảnh tuần tự.
 - Không gửi ảnh lên cloud; không cần API key hay root.
 
-## Chạy nhanh trên Windows
+## Cài đặt
+
+### 1. Cài package
 
 ```powershell
-cd D:\Github\ADB-MLKit
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install .\dist\adb_mlkit-0.1.0-py3-none-any.whl
+python -m pip install adb-mlkit
 ```
 
-Wheel đã chứa APK và cả 5 model, không cần tự build Android. ADB/platform-tools vẫn phải cài riêng. Lệnh pip không tự cài app lên điện thoại; khi chạy lệnh đọc văn bản, SDK sẽ tự kiểm tra và cài APK đi kèm đã được xác minh checksum nếu thiết bị chưa có:
+Có hỗ trợ XPath:
 
 ```powershell
-adb-mlkit devices
-adb-mlkit recognize --screenshot --language vi --runs 3 --json
+python -m pip install "adb-mlkit[ui]"
 ```
 
-Không cần chạy `adb-mlkit install` trước. Cơ chế này áp dụng cho `recognize`, `batch` và các hàm đọc văn bản trong API Python. Nếu APK đã có thì không tự cài lại hay cập nhật. Vẫn có thể dùng `adb-mlkit install` để cài/cập nhật thủ công, hoặc `adb-mlkit install path/to/custom.apk` để chọn APK khác. Nếu cài thất bại, OCR dừng và báo lỗi; SDK không tự gỡ APK hiện có để xử lý xung đột.
+Package đã chứa APK Android và cả 5 model, không cần tự build Android, không cần Java/Gradle/Android Studio. ADB/platform-tools vẫn phải cài riêng.
 
-Sau khi chủ repo phát hành lên PyPI, người dùng sẽ cài bằng `pip install adb-mlkit` hoặc `pip install "adb-mlkit[ui]"`. Hiện việc chuẩn bị source/wheel chưa đồng nghĩa đã đăng lên PyPI. Xem [hướng dẫn phát hành](docs/PUBLISHING.md).
+### 2. Kết nối điện thoại
 
-Package mới là `io.github.adbmlkit.helper`, không dùng chung APK prototype `com.example.mlkitocrtest`.
+Bật USB debugging trên điện thoại, cắm máy (hoặc kết nối TCP) và cấp quyền ADB:
+
+```powershell
+adb devices
+```
+
+Thiết bị phải hiện với trạng thái `device`.
+
+### 3. Đọc văn bản
+
+Lệnh đọc văn bản và API Python sẽ **tự kiểm tra và cài APK đi kèm** (đã xác minh checksum) nếu điện thoại chưa có. Không cần chạy `adb-mlkit install` trước:
+
+```powershell
+adb-mlkit recognize --screenshot --language vi --json
+```
+
+Nếu APK đã có thì không tự cài lại hay cập nhật. Vẫn có thể dùng `adb-mlkit install` để cài/cập nhật thủ công, hoặc `adb-mlkit install path/to/custom.apk` để chọn APK khác. Nếu cài thất bại, OCR dừng và báo lỗi; SDK không tự gỡ APK hiện có để xử lý xung đột.
+
+## Sử dụng
 
 **Đọc ảnh nằm trong điện thoại:**
 
@@ -53,11 +69,19 @@ adb-mlkit recognize --file chinese.png --script chinese --json
 **Đọc bằng XPath:**
 
 ```powershell
-python -m pip install -e ".[ui]"
 adb-mlkit recognize --xpath '//*[@resource-id="com.example:id/dialog"]/..' --language vi --runs 3
 ```
 
 Thay XPath bằng phần tử trên app của bạn. Màn hình thay đổi giữa lúc lấy XPath và chụp ảnh có thể làm vùng không còn khớp.
+
+**Quản lý thiết bị:**
+
+```powershell
+adb-mlkit devices           # Liệt kê thiết bị đang kết nối
+adb-mlkit info              # Model, API level, trạng thái APK helper
+adb-mlkit install           # Cài hoặc cập nhật APK helper
+adb-mlkit languages         # Liệt kê bộ chữ và bí danh ngôn ngữ
+```
 
 ## API Python
 
@@ -85,6 +109,29 @@ Chọn thiết bị cụ thể: `ADBMLKit(serial="SERIAL")` hoặc `adb-mlkit --
 - Một phiên nhận dạng tại một thời điểm cho mỗi điện thoại. Các process riêng phải tự điều phối.
 - APK debug không xin quyền mạng, không bỏ qua `FLAG_SECURE` hay cơ chế bảo vệ của Android.
 - Dữ liệu tạm được cố gắng xóa sau mỗi request; mất kết nối hoặc dừng process đột ngột có thể để lại file.
+
+## Phát triển từ source
+
+Clone repo và build từ source. Cần JDK 25, Android SDK (API 37) và bộ công cụ trong [android/README.md](android/README.md):
+
+```powershell
+git clone https://github.com/zidonghua-source/ADB-MLKit.git
+cd ADB-MLKit
+
+python -m pip install -e ".[dev]"
+python -m unittest discover -s tests -v
+
+# Build APK helper trước
+cd android
+.\gradlew.bat :app:assembleDebug
+cd ..
+
+python scripts/prepare_package.py
+python -m build
+python scripts/verify_wheel.py dist/adb_mlkit-0.1.0-py3-none-any.whl
+```
+
+Source checkout cài bằng `pip install .` mà chưa chạy bước chuẩn bị tài nguyên sẽ chỉ có Python, không có APK đi kèm; lúc đó OCR báo thiếu APK. Có thể cung cấp APK tùy chỉnh hoặc cài từ PyPI.
 
 ## Tài liệu
 

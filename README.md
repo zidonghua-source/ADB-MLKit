@@ -21,52 +21,59 @@ ADB-MLKit consists of a Python SDK/CLI and a small, headless Android instrumenta
 
 - Python 3.10+, Android platform-tools (`adb`) on PATH, and an authorized USB/TCP device.
 - Android 6.0 / API 23 or newer.
-- A distribution wheel includes the version-matched Android helper APK. End users do not need Java/Gradle/Android Studio.
-- ADB/platform-tools remains a separate prerequisite; pip never installs an APK on your phone automatically.
 - Optional XPath support: install the `[ui]` extra.
 
 This does **not** bypass Android screen-capture restrictions or private-storage permissions. Avoid enabling ADB on untrusted networks.
 
 ## Quick start
 
-Install the built wheel (available locally in `dist/`; publication is a separate maintainer step):
+### 1. Install
 
-```powershell
-python -m pip install ./dist/adb_mlkit-0.1.0-py3-none-any.whl
-adb-mlkit devices
+```bash
+python -m pip install adb-mlkit
 ```
 
-After the maintainer publishes this project to PyPI, installation by name becomes:
+With optional XPath support:
 
-```text
-python -m pip install adb-mlkit
+```bash
 python -m pip install "adb-mlkit[ui]"
 ```
 
-These package-index commands require an actual release; preparing this repository does not publish one. See [PyPI publishing](docs/PUBLISHING.md).
+The package includes the version-matched Android helper APK and all five OCR script models. End users do not need Java, Gradle, or Android Studio. ADB/platform-tools must be installed separately.
 
-Run OCR directly. Recognition commands and Python recognition methods automatically install the bundled, checksum-verified helper on the selected phone if it is missing:
+### 2. Connect device
 
-```powershell
-adb-mlkit recognize --screenshot --language vi --runs 3 --json
-adb-mlkit info
+Ensure your Android device is connected via USB or TCP with USB debugging enabled and authorized:
+
+```bash
+adb devices
 ```
 
-An existing helper is not automatically reinstalled or updated. Use `adb-mlkit install` to install/update it manually, or `adb-mlkit install path/to/custom.apk` for a custom APK. Installation errors stop recognition; the SDK never uninstalls an existing package to resolve a conflict.
+You should see your device listed with state `device`.
 
-The new helper package is **`io.github.adbmlkit.helper`**, separate from the earlier `com.example.mlkitocrtest` prototype. The prototype APK cannot serve this protocol.
+### 3. Read text
 
-### Images on Android
+Recognition commands and the Python API automatically install the helper APK on the selected device if it is missing. No separate installation step is needed:
 
-```powershell
+```bash
+adb-mlkit recognize --screenshot --language vi --json
+```
+
+An existing helper is not automatically reinstalled or updated. Use `adb-mlkit install` to install or update it manually, or `adb-mlkit install path/to/custom.apk` for a custom APK. Installation errors stop recognition; the SDK never uninstalls an existing package to resolve a conflict.
+
+## Usage
+
+### Read text from Android
+
+```bash
 adb-mlkit recognize --device-file "/sdcard/Download/example.png" --language vi --json
 ```
 
 The Android shell must already be allowed to read the path. The host reads the encoded bytes over ADB and stages them in helper-private storage; this is not zero-copy device-only ingestion and does not require broad storage permissions.
 
-### Local images, crop and other scripts
+### Read local images, crop and other scripts
 
-```powershell
+```bash
 adb-mlkit recognize --file image.png --language vi --roi 60 100 1000 700 --runs 5
 adb-mlkit recognize --file japanese.png --script japanese --json
 adb-mlkit recognize --file rotated.jpg --rotation 90 --json --output result.json
@@ -94,6 +101,15 @@ for block in result.blocks:
 
 See [API reference](docs/API.md) and [examples](examples/) for all entry points.
 
+### Device management
+
+```bash
+adb-mlkit devices           # List attached devices
+adb-mlkit info              # Device model, API level, helper status
+adb-mlkit install           # Install or update the bundled helper
+adb-mlkit languages         # List supported scripts and language aliases
+```
+
 ## Languages versus scripts
 
 `--language vi` selects the **Latin model**, not a Vietnamese-only model. It does not translate, force output into Vietnamese, or provide a recognition hint. The SDK maps a documented set of aliases to the five supported scripts; `adb-mlkit languages` lists them. The alias list is not Google's exhaustive language list. Unsupported scripts (for example Arabic or Thai) are not automatically recognized by this integration.
@@ -106,16 +122,31 @@ ROI is `[left, top, right, bottom]` in the original unrotated source image, with
 
 `runs=N` recognizes **one image N times** using one recognizer in one invocation. The first run can include lazy model initialization; later values measure warm recognition. Each API call starts instrumentation again. Warm OCR time is not end-to-end latency. The host total includes image loading/capture, helper setup, transfers and cleanup. `host_timing.setup_ms` measures the package check and any automatic APK installation; the first call on a device without the helper therefore takes longer. No fixed speed or accuracy guarantee is made.
 
-## Development and verification
+## Development
 
-```powershell
+### From source
+
+Clone the repository and build from source. This requires JDK 25, Android SDK (API 37), and the toolchain described in [android/README.md](android/README.md).
+
+```bash
+git clone https://github.com/zidonghua-source/ADB-MLKit.git
+cd ADB-MLKit
+
 python -m pip install -e ".[dev]"
 python -m unittest discover -s tests -v
-# Build Android first: see android/README.md
+
+# Build Android helper first
+cd android && ./gradlew :app:assembleDebug && cd ..
 python scripts/prepare_package.py
+
+# Build and verify wheel
 python -m build
 python scripts/verify_wheel.py dist/adb_mlkit-0.1.0-py3-none-any.whl
 ```
+
+A bare source checkout installed with `pip install .` without the staging step installs Python only; recognition will report a missing bundled APK. You can supply a custom APK explicitly or install from PyPI instead.
+
+### CI checks
 
 Python unit tests mock ADB; they do not establish on-device accuracy. Build the Android helper separately. See [CONTRIBUTING.md](CONTRIBUTING.md) for synthetic-image device tests and publication notes. No device credentials or private images are included.
 

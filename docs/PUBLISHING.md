@@ -2,7 +2,7 @@
 
 ## What is ready
 
-The wheel and source distribution include the version-matched five-script Android APK plus a SHA-256 manifest. `adb-mlkit install` or `ADBMLKit().install()` installs this bundled helper **only when explicitly invoked**. An optional APK path still works. Pip installation has no ADB/device side effects and requires no Android build tooling for wheel users.
+The wheel and source distribution include the version-matched five-script Android APK plus a SHA-256 manifest. Recognition commands and Python recognition methods automatically install this bundled helper on the selected device if it is missing; `adb-mlkit install` or `ADBMLKit().install()` remains available for explicit installation/updates or a custom APK path. Pip installation itself has no ADB/device side effects and requires no Android build tooling for wheel users.
 
 ADB/platform-tools must already be installed. The Python core is standard-library-only; `[ui]` adds uiautomator2 and Pillow. A bundled APK makes the wheel tens of megabytes; check current PyPI per-file limits and redistribution terms before publishing. The checksum detects corrupted/mismatched package resources; it is not independent publisher authentication.
 
@@ -19,13 +19,12 @@ python scripts/verify_wheel.py dist/adb_mlkit-0.1.0-py3-none-any.whl
 python -m twine check dist/*
 ```
 
-`prepare_package.py` checks Android output metadata, source version agreement and all five model assets. It stages generated resources under `src/adb_mlkit/assets/`; these are ignored by Git but included in built distributions. Keep the APK and Gradle `output-metadata.json` together. A bare source checkout installed with `pip install .` without this staging step installs Python only; `install` then reports a missing bundled helper. It does not secretly download/build an APK. You can supply a custom APK explicitly instead.
+`prepare_package.py` checks Android output metadata, source version agreement and all five model assets. It stages generated resources under `src/adb_mlkit/assets/`; these are ignored by Git but included in built distributions. Keep the APK and Gradle `output-metadata.json` together. A bare source checkout installed with `pip install .` without this staging step installs Python only; recognition then reports a missing bundled helper. It does not secretly download/build an APK. You can supply a custom APK explicitly instead.
 
 Install the distributable into any environment:
 
 ```powershell
 python -m pip install ./dist/adb_mlkit-0.1.0-py3-none-any.whl
-adb-mlkit install
 adb-mlkit recognize --screenshot --language vi --json
 ```
 
@@ -60,8 +59,9 @@ After a real PyPI release:
 
 ```text
 python -m pip install adb-mlkit
-python -m pip install "adb-mlkit[ui]"
-adb-mlkit install
+adb-mlkit recognize --screenshot --language vi --json
 ```
+
+The helper APK is installed automatically on the device during the first OCR call. To install or update it explicitly, use `adb-mlkit install`.
 
 For TestPyPI, test the core with `--no-deps --index-url https://test.pypi.org/simple/`; normal dependencies generally live on PyPI. Avoid casually mixing public indexes with `--extra-index-url` because name collisions can select unintended packages.
