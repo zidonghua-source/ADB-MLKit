@@ -4,7 +4,7 @@
 
 The wheel and source distribution include the version-matched five-script Android APK plus a SHA-256 manifest. Recognition commands and Python recognition methods automatically install this bundled helper on the selected device if it is missing; `adb-mlkit install` or `ADBMLKit().install()` remains available for explicit installation/updates or a custom APK path. Pip installation itself has no ADB/device side effects and requires no Android build tooling for wheel users.
 
-ADB/platform-tools must already be installed. The Python core is standard-library-only; `[ui]` adds uiautomator2 and Pillow. A bundled APK makes the wheel tens of megabytes; check current PyPI per-file limits and redistribution terms before publishing. The checksum detects corrupted/mismatched package resources; it is not independent publisher authentication.
+ADB/platform-tools must already be installed. The Python core is standard-library-only; uiautomator2 and Pillow are bundled for XPath support. A bundled APK makes the wheel tens of megabytes; check current PyPI per-file limits and redistribution terms before publishing. The checksum detects corrupted/mismatched package resources; it is not independent publisher authentication.
 
 ## Build locally
 

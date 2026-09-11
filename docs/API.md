@@ -18,7 +18,7 @@ Construction/import does not contact a device. Without `serial`, exactly one aut
 | `recognize_file(path, **options)` | Local file; returns `OCRResult` |
 | `recognize_device_file(path, **options)` | Absolute Android path readable by shell; returns `OCRResult` |
 | `recognize_screenshot(**options)` | Capture current display using ADB screencap; returns `OCRResult` |
-| `recognize_xpath(xpath, xpath_timeout=10, **options)` | Optional uiautomator2 lookup supplies screenshot ROI; returns `OCRResult` |
+| `recognize_xpath(xpath, xpath_timeout=10, **options)` | uiautomator2 lookup supplies screenshot ROI; returns `OCRResult` |
 | `batch_files(paths, **options)` | Sequential list of local files; returns list of results, stops on first error |
 
 All recognition methods (including batch) check for the helper on the selected device before staging input. If missing, they install the bundled checksum-verified APK automatically. An existing helper is not reinstalled or upgraded; use `install()` explicitly for updates or a custom APK. Package-query and installation failures abort recognition without staging a request. Construction, `devices()` and `info()` never install an APK.

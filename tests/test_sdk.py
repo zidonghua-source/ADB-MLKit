@@ -255,7 +255,7 @@ class SDKTests(unittest.TestCase):
                 self.client.recognize_bytes(b"")
         shell.assert_not_called()
 
-    def test_xpath_roi_rejected_without_optional_import(self):
+    def test_xpath_roi_rejected_before_ui_lookup(self):
         with self.assertRaises(ValueError):
             self.client.recognize_xpath("//*", roi=[0, 0, 10, 10])
 

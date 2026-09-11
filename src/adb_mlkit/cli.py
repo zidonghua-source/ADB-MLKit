@@ -27,7 +27,7 @@ def parser():
             source.add_argument("--file", type=Path)
             source.add_argument("--device-file", help="Absolute path readable by Android shell")
             source.add_argument("--screenshot", action="store_true")
-            source.add_argument("--xpath", help="Optional uiautomator2 lookup; OCR reads the text")
+            source.add_argument("--xpath", help="uiautomator2 lookup; OCR reads the text")
         else:
             command.add_argument("files", type=Path, nargs="+")
         selection = command.add_mutually_exclusive_group()

@@ -9,7 +9,7 @@ ADB-MLKit consists of a Python SDK/CLI and a small, headless Android instrumenta
 ## Features
 
 - Read a local image, encoded image bytes, an image already on Android, or a screenshot.
-- Optional XPath-to-region lookup with uiautomator2; recognized text always comes from OCR.
+- XPath-to-region lookup with uiautomator2; recognized text always comes from OCR.
 - Five bundled script models: **Latin (including Vietnamese), Chinese, Japanese, Korean and Devanagari**.
 - Crop ROI, clockwise rotation, block/line/element text and geometry, engine-provided confidence where available.
 - Multiple devices via explicit serial selection; sequential batch images.
@@ -21,7 +21,6 @@ ADB-MLKit consists of a Python SDK/CLI and a small, headless Android instrumenta
 
 - Python 3.10+, Android platform-tools (`adb`) on PATH, and an authorized USB/TCP device.
 - Android 6.0 / API 23 or newer.
-- Optional XPath support: install the `[ui]` extra.
 
 This does **not** bypass Android screen-capture restrictions or private-storage permissions. Avoid enabling ADB on untrusted networks.
 
@@ -33,13 +32,7 @@ This does **not** bypass Android screen-capture restrictions or private-storage 
 python -m pip install adb-mlkit
 ```
 
-With optional XPath support:
-
-```bash
-python -m pip install "adb-mlkit[ui]"
-```
-
-The package includes the version-matched Android helper APK and all five OCR script models. End users do not need Java, Gradle, or Android Studio. ADB/platform-tools must be installed separately.
+The package includes the version-matched Android helper APK, all five OCR script models, and XPath support (uiautomator2 and Pillow). End users do not need Java, Gradle, or Android Studio. ADB/platform-tools must be installed separately.
 
 ### 2. Connect device
 

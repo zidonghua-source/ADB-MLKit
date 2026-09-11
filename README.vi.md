@@ -19,13 +19,7 @@ Project độc lập gồm **SDK/CLI Python** và **APK Android không có giao 
 python -m pip install adb-mlkit
 ```
 
-Có hỗ trợ XPath:
-
-```powershell
-python -m pip install "adb-mlkit[ui]"
-```
-
-Package đã chứa APK Android và cả 5 model, không cần tự build Android, không cần Java/Gradle/Android Studio. ADB/platform-tools vẫn phải cài riêng.
+Package đã chứa APK Android, cả 5 model và hỗ trợ XPath (uiautomator2 và Pillow), không cần tự build Android, không cần Java/Gradle/Android Studio. ADB/platform-tools vẫn phải cài riêng.
 
 ### 2. Kết nối điện thoại
 

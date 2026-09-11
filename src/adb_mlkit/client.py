@@ -227,10 +227,7 @@ class ADBMLKit:
         if options.get("roi") is not None:
             raise ValueError("XPath supplies its own ROI")
         def load():
-            try:
-                import uiautomator2 as u2
-            except ImportError as exc:
-                raise ADBMLKitError('Install optional UI support: pip install "adb-mlkit[ui]"') from exc
+            import uiautomator2 as u2
             device = u2.connect(self.serial)
             bounds = tuple(device.xpath(xpath).get(timeout=xpath_timeout).bounds)
             image = device.screenshot().convert("RGB")

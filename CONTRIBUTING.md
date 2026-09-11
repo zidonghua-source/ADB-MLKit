@@ -26,7 +26,7 @@ The unit suite and a successful APK build do not prove device behavior. Use an a
 1. Build and package the helper. On an authorized test device without the helper, run `adb-mlkit recognize --file synthetic.png` and verify automatic installation followed by OCR. Repeat recognition and verify that it does not reinstall. Use `adb-mlkit install ...` when explicitly testing updates or a custom APK.
 2. Use `adb-mlkit info` to verify device/helper setup.
 3. Recognize the same synthetic image with `--file` and `--device-file` after manually copying it to a readable shared folder. Compare text, dimensions, ROI and rotated geometry.
-4. Use a screen containing synthetic text for `--screenshot`; use optional `[ui]` dependencies for XPath.
+4. Use a screen containing synthetic text for `--screenshot`; use XPath support for region lookup.
 5. Test each script with corresponding synthetic text. Record device model/API, source image resolution and first/warm/end-to-end timing separately.
 6. Include invalid-image, out-of-bounds ROI, permission-denied, disconnected-device and multiple-device tests. Verify error messages and request cleanup.
 

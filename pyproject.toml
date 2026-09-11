@@ -12,9 +12,9 @@ license = "MIT"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 keywords = ["adb", "android", "ocr", "mlkit", "vietnamese"]
 classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS Independent"]
+dependencies = ["uiautomator2>=3.0,<4", "Pillow>=10"]
 
 [project.optional-dependencies]
-ui = ["uiautomator2>=3.0,<4", "Pillow>=10"]
 dev = ["build>=1.2", "twine>=6"]
 
 [project.urls]

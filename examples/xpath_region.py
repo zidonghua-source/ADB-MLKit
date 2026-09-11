@@ -1,4 +1,4 @@
-"""Install optional [ui] dependencies and replace the example XPath."""
+"""Replace the example XPath with a selector for your app's UI."""
 from adb_mlkit import ADBMLKit
 
 
