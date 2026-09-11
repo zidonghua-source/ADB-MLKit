@@ -33,3 +33,4 @@ Thumbs.db
 samples/private/
 artifacts/
 *.log
+/.zcode
