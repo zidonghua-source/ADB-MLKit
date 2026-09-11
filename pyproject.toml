@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "adb-mlkit"
-version = "0.1.1"
+version = "0.1.2"
 description = "On-device multilingual ML Kit OCR from Python over ADB"
 readme = "README.md"
 requires-python = ">=3.10"
