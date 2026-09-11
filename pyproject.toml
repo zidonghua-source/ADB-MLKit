@@ -15,7 +15,16 @@ classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS In
 
 [project.optional-dependencies]
 ui = ["uiautomator2>=3.0,<4", "Pillow>=10"]
-dev = ["build>=1.2"]
+dev = ["build>=1.2", "twine>=6"]
+
+[project.urls]
+Homepage = "https://github.com/zidonghua-source/ADB-MLKit"
+Repository = "https://github.com/zidonghua-source/ADB-MLKit"
+Issues = "https://github.com/zidonghua-source/ADB-MLKit/issues"
+Documentation = "https://github.com/zidonghua-source/ADB-MLKit/blob/main/README.md"
+
+[tool.setuptools.package-data]
+adb_mlkit = ["assets/*.apk", "assets/helper.json"]
 
 [project.scripts]
 adb-mlkit = "adb_mlkit.cli:main"

@@ -95,7 +95,12 @@ class ADBMLKit:
                     "helper_installed": self._shell("pm", "path", PACKAGE).startswith(b"package:"),
                     "package": PACKAGE, "scripts": list(SCRIPTS), "protocol_version": 1}
 
-    def install(self, apk):
+    def install(self, apk=None):
+        """Explicitly install the bundled helper, or a caller-supplied APK."""
+        if apk is None:
+            from .helper import bundled_apk
+            with bundled_apk() as path:
+                return self.install(path)
         path = Path(apk).resolve()
         if not path.is_file():
             raise FileNotFoundError(path)

@@ -5,7 +5,10 @@
 ```text
 python -m pip install -e ".[dev]"
 python -m unittest discover -s tests -v
+# After building Android:
+python scripts/prepare_package.py
 python -m build
+python scripts/smoke_install.py dist/adb_mlkit-0.1.0-py3-none-any.whl
 ```
 
 Android checks (from `android/`; use `gradlew.bat` on Windows):
@@ -37,9 +40,9 @@ Update Python result models, Android serialization, protocol documentation and t
 
 The project is prepared locally; nothing is automatically pushed or published. Review all files and the license before creating a remote. Replace example paths/serials only in your local commands, not with real private data in documentation.
 
-When ready, create an empty GitHub repository named `ADB-MLKit` under your own account and use its actual remote URL. Commit and push only after reviewing `git status` and `git diff --cached`. No owner or remote URL is assumed in this project.
+The configured repository is https://github.com/zidonghua-source/ADB-MLKit. Commit and push only after reviewing `git status` and `git diff --cached`. Forks should update the project URLs and Trusted Publisher configuration for their own repository.
 
-GitHub Actions are configured for tests/builds and workflow artifacts, **not automatic PyPI publication or GitHub releases**. Review permissions and current third-party dependency terms before distributing an APK. Debug signing on CI is ephemeral, so a CI APK may not update a locally signed installation without a signature conflict; use one controlled signing key for stable releases and never commit it. Do not uninstall an existing helper blindly to resolve a conflict if it contains data you need.
+GitHub Actions run tests/builds and produce artifacts. A separate **manual-only** PyPI/TestPyPI workflow is documented in [PUBLISHING.md](docs/PUBLISHING.md); configure protected environments and Trusted Publishing before using it. Nothing publishes automatically on push. Review permissions and current third-party dependency terms before distributing an APK. Debug signing on CI is ephemeral, so a CI APK may not update a locally signed installation without a signature conflict; use one controlled signing key for stable releases and never commit it. Do not uninstall an existing helper blindly to resolve a conflict if it contains data you need.
 
 ## Scope
 

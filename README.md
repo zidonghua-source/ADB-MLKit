@@ -21,28 +21,34 @@ ADB-MLKit consists of a Python SDK/CLI and a small, headless Android instrumenta
 
 - Python 3.10+, Android platform-tools (`adb`) on PATH, and an authorized USB/TCP device.
 - Android 6.0 / API 23 or newer.
-- A locally built helper APK. Build once using [Android instructions](android/README.md).
-- Optional XPath support: `pip install -e ".[ui]"`.
+- A distribution wheel includes the version-matched Android helper APK. End users do not need Java/Gradle/Android Studio.
+- ADB/platform-tools remains a separate prerequisite; pip never installs an APK on your phone automatically.
+- Optional XPath support: install the `[ui]` extra.
 
 This does **not** bypass Android screen-capture restrictions or private-storage permissions. Avoid enabling ADB on untrusted networks.
 
 ## Quick start
 
-Run from a clone of this repository:
+Install the built wheel (available locally in `dist/`; publication is a separate maintainer step):
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -e .
+python -m pip install ./dist/adb_mlkit-0.1.0-py3-none-any.whl
 adb-mlkit devices
 ```
 
-Linux/macOS: activate with `source .venv/bin/activate` instead.
+After the maintainer publishes this project to PyPI, installation by name becomes:
 
-Build the helper APK following `android/README.md`, then explicitly install it:
+```text
+python -m pip install adb-mlkit
+python -m pip install "adb-mlkit[ui]"
+```
+
+These package-index commands require an actual release; preparing this repository does not publish one. See [PyPI publishing](docs/PUBLISHING.md).
+
+Explicitly install the bundled, checksum-verified helper on the selected phone:
 
 ```powershell
-adb-mlkit install android/app/build/outputs/apk/debug/app-debug.apk
+adb-mlkit install
 adb-mlkit info
 adb-mlkit recognize --screenshot --language vi --runs 3 --json
 ```
@@ -104,7 +110,10 @@ ROI is `[left, top, right, bottom]` in the original unrotated source image, with
 ```powershell
 python -m pip install -e ".[dev]"
 python -m unittest discover -s tests -v
+# Build Android first: see android/README.md
+python scripts/prepare_package.py
 python -m build
+python scripts/verify_wheel.py dist/adb_mlkit-0.1.0-py3-none-any.whl
 ```
 
 Python unit tests mock ADB; they do not establish on-device accuracy. Build the Android helper separately. See [CONTRIBUTING.md](CONTRIBUTING.md) for synthetic-image device tests and publication notes. No device credentials or private images are included.

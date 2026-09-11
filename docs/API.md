@@ -13,7 +13,7 @@ Construction/import does not contact a device. Without `serial`, exactly one aut
 |---|---|
 | `devices()` | All discovered `Device(serial, state, details)` records, including unauthorized devices |
 | `info()` | Selected device model/API, helper installed flag and supported script list |
-| `install(apk)` | Explicitly install/update a local APK, returning installation confirmation |
+| `install(apk=None)` | Explicitly install/update the bundled checksum-verified APK, or a custom local APK; returns confirmation |
 | `recognize_bytes(data, **options)` | Encoded image bytes; returns `OCRResult` |
 | `recognize_file(path, **options)` | Local file; returns `OCRResult` |
 | `recognize_device_file(path, **options)` | Absolute Android path readable by shell; returns `OCRResult` |
@@ -69,7 +69,7 @@ COMMAND:
   devices
   info
   languages
-  install APK
+  install [APK]
   recognize (--file PATH | --device-file PATH | --screenshot | --xpath XPATH)
   batch FILE [FILE ...]
 

@@ -17,16 +17,18 @@ Project độc lập gồm **SDK/CLI Python** và **APK Android không có giao 
 cd D:\Github\ADB-MLKit
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-python -m pip install -e .
+python -m pip install .\dist\adb_mlkit-0.1.0-py3-none-any.whl
 ```
 
-Build APK theo [hướng dẫn Android](android/README.md). Khi APK đã có:
+Wheel đã chứa APK và cả 5 model, không cần tự build Android. ADB/platform-tools vẫn phải cài riêng. Lệnh pip không tự cài app lên điện thoại; cài rõ ràng bằng:
 
 ```powershell
 adb-mlkit devices
-adb-mlkit install android/app/build/outputs/apk/debug/app-debug.apk
+adb-mlkit install
 adb-mlkit recognize --screenshot --language vi --runs 3 --json
 ```
+
+Sau khi chủ repo phát hành lên PyPI, người dùng sẽ cài bằng `pip install adb-mlkit` hoặc `pip install "adb-mlkit[ui]"`. Hiện việc chuẩn bị source/wheel chưa đồng nghĩa đã đăng lên PyPI. Xem [hướng dẫn phát hành](docs/PUBLISHING.md).
 
 Package mới là `io.github.adbmlkit.helper`, không dùng chung APK prototype `com.example.mlkitocrtest`.
 

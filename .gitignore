@@ -15,6 +15,7 @@ build/
 local.properties
 .cxx/
 *.apk
+src/adb_mlkit/assets/helper.json
 *.aab
 *.keystore
 *.jks

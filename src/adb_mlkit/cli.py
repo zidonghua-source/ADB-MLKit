@@ -18,8 +18,8 @@ def parser():
     commands.add_parser("devices", help="List attached devices and authorization states")
     commands.add_parser("info", help="Inspect selected device and helper installation")
     commands.add_parser("languages", help="List scripts and convenience language aliases")
-    install = commands.add_parser("install", help="Explicitly install/update a locally built APK")
-    install.add_argument("apk", type=Path)
+    install = commands.add_parser("install", help="Explicitly install bundled helper or a custom APK")
+    install.add_argument("apk", type=Path, nargs="?", help="Optional custom APK; default is the bundled helper")
     for name in ("recognize", "batch"):
         command = commands.add_parser(name)
         if name == "recognize":

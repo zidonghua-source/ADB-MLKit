@@ -23,7 +23,6 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e ".[dev]"
       - run: python -m unittest discover -s tests -v
-      - run: python -m build
       - run: python -m adb_mlkit languages
 
   android:
@@ -51,3 +50,24 @@ jobs:
         with:
           name: android-check-reports
           path: android/app/build/reports/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m pip install build twine
+      - run: python scripts/prepare_package.py
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - name: Verify and smoke-test wheel
+        shell: bash
+        run: |
+          python scripts/verify_wheel.py dist/*.whl
+          python -m venv "$RUNNER_TEMP/wheel-test"
+          "$RUNNER_TEMP/wheel-test/bin/python" -m pip install --no-deps dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/wheel-test/bin/python" -m adb_mlkit languages
+          "$RUNNER_TEMP/wheel-test/bin/python" -c 'from adb_mlkit.helper import bundled_apk; c=bundled_apk(); p=c.__enter__(); assert p.is_file(); c.__exit__(None,None,None)'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
