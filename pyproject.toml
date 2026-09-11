@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adb-mlkit"
+version = "0.1.0"
+description = "On-device multilingual ML Kit OCR from Python over ADB"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+keywords = ["adb", "android", "ocr", "mlkit", "vietnamese"]
+classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS Independent"]
+
+[project.optional-dependencies]
+ui = ["uiautomator2>=3.0,<4", "Pillow>=10"]
+dev = ["build>=1.2"]
+
+[project.scripts]
+adb-mlkit = "adb_mlkit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

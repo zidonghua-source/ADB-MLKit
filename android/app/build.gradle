@@ -1,0 +1,43 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace = 'io.github.adbmlkit.helper'
+    compileSdk = 37
+    buildToolsVersion = '36.0.0'
+
+    defaultConfig {
+        applicationId = 'io.github.adbmlkit.helper'
+        minSdk = 23
+        targetSdk = 37
+        versionCode = 1
+        versionName = '0.1.0'
+    }
+
+    // This is a run-as SDK helper, not a user-facing production application.
+    buildTypes {
+        debug {
+            debuggable = true
+        }
+        release {
+            debuggable = true
+            minifyEnabled = false
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+    implementation 'com.google.mlkit:text-recognition-chinese:16.0.1'
+    implementation 'com.google.mlkit:text-recognition-devanagari:16.0.1'
+    implementation 'com.google.mlkit:text-recognition-japanese:16.0.1'
+    implementation 'com.google.mlkit:text-recognition-korean:16.0.1'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+}

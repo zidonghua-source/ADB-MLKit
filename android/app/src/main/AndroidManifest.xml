@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Strip every permission contributed by dependencies: bundled OCR is offline. -->
+    <uses-permission tools:node="removeAll" />
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:label="ADB-MLKit Helper"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false">
+        <activity
+            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+            tools:node="remove" />
+        <!-- ML Kit's merged, non-exported MlKitInitProvider initializes bundled SDKs
+             before self-instrumentation; no launcher Activity is necessary. -->
+    </application>
+
+    <instrumentation
+        android:name=".OcrInstrumentation"
+        android:targetPackage="io.github.adbmlkit.helper"
+        android:functionalTest="true"
+        android:handleProfiling="false" />
+</manifest>
