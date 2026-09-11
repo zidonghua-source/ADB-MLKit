@@ -1,6 +1,9 @@
 name: Publish Python package
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       target:
@@ -16,6 +19,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.target.outputs.name }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,6 +33,24 @@ jobs:
       - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
       - run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+      - name: Resolve target index
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "name=${{ inputs.target }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=pypi" >> $GITHUB_OUTPUT
+          fi
+      - name: Verify tag matches package version
+        if: github.ref_type == 'tag'
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(python -c "import re; print(re.search(r'^version = \"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Tag $TAG_VERSION does not match package version $PKG_VERSION" >&2
+            exit 1
+          fi
+          echo "Publishing version $PKG_VERSION"
       - name: Restore stable helper debug signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.HELPER_DEBUG_KEYSTORE_BASE64 }}
@@ -61,7 +84,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: ${{ inputs.target }}
+      name: ${{ needs.build.outputs.target }}
     permissions:
       id-token: write
     steps:
@@ -70,10 +93,10 @@ jobs:
           name: publish-distributions
           path: dist/
       - name: Publish to TestPyPI
-        if: inputs.target == 'testpypi'
+        if: needs.build.outputs.target == 'testpypi'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
       - name: Publish to PyPI
-        if: inputs.target == 'pypi'
+        if: needs.build.outputs.target == 'pypi'
         uses: pypa/gh-action-pypi-publish@release/v1

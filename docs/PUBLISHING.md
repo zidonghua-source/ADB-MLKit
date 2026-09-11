@@ -38,9 +38,42 @@ An existing locally signed installation only updates when its certificate matche
 
 ## Publish with GitHub Trusted Publishing
 
-No upload is automatic on push or tag. `.github/workflows/publish.yml` is **manual-only** and defaults to TestPyPI.
+Publishing is **automatic on push to `main`**. The release workflow bumps the SemVer version, creates a git tag and GitHub Release, which triggers the publish workflow to build and upload to PyPI via OIDC Trusted Publishing.
 
-Owner setup required:
+### How it works
+
+```
+push to main → release.yml → bump version → git tag v* → GitHub Release → publish.yml → PyPI
+```
+
+1. **`release.yml`** runs on every push to `main`:
+   - Determines bump type from the latest commit message (default: patch).
+   - Runs `scripts/bump_version.py` to update `pyproject.toml`, `src/adb_mlkit/__init__.py`, and `android/app/build.gradle` (versionName + versionCode).
+   - Commits with `[skip ci]` to prevent re-triggering, creates tag `v{new_version}`, and pushes.
+   - Creates a GitHub Release with auto-generated notes.
+
+2. **`publish.yml`** is triggered by the tag push:
+   - Verifies the tag version matches `pyproject.toml`.
+   - Builds the Android helper APK, stages it with `prepare_package.py`, builds the wheel, and verifies it.
+   - Publishes to PyPI using OIDC Trusted Publishing.
+
+### Commit message conventions
+
+| Commit message | Bump type | Example |
+|---|---|---|
+| Any (default) | **patch** | 0.1.0 → 0.1.1 |
+| `... [minor]` at end | **minor** | 0.1.0 → 0.2.0 |
+| `... [major]` at end | **major** | 0.1.0 → 1.0.0 |
+| Starts with `[skip ci]` | skipped | release commit → no re-trigger |
+
+### Manual publish
+
+`workflow_dispatch` is still available to re-publish or target TestPyPI:
+
+1. Dispatch **Publish Python package**, target `testpypi`, on any branch.
+2. After validation, dispatch target `pypi` and approve the protected environment.
+
+### Owner setup required
 
 1. Create accounts at PyPI and TestPyPI; verify you may register/use `adb-mlkit`. This repository does not establish ownership or name availability.
 2. Configure a Trusted Publisher/pending publisher on each index:
@@ -49,11 +82,8 @@ Owner setup required:
    - Workflow: `publish.yml`
    - Environment: `testpypi` or `pypi`, respectively.
 3. Create corresponding GitHub environments and configure **required reviewers** for publication. Environment protection is a GitHub setting; YAML alone does not enforce human approval.
-4. Add the stable helper-keystore repository secret described above. Restrict who can dispatch workflows/change repository code; build jobs run repository code with access to that signing key.
-5. Review Google's redistribution terms and the complete generated package. Increment the Python `pyproject.toml` version, `src/adb_mlkit/__init__.py` version and Android `versionName` together; increment Android `versionCode` for upgrades. PyPI release files cannot be overwritten.
-6. Dispatch **Publish Python package**, target `testpypi`, on a reviewed commit. After validation, dispatch target `pypi` and approve its protected environment.
-
-OIDC Trusted Publishing avoids storing a PyPI API token. Only the publish job has `id-token: write`. The workflow builds/tests both components, checks distributions and uploads through PyPA's publishing action. Workflows have been prepared locally, not executed against your account.
+4. Add the stable helper-keystore repository secret `HELPER_DEBUG_KEYSTORE_BASE64`. Restrict who can dispatch workflows/change repository code; build jobs run repository code with access to that signing key.
+5. Review Google's redistribution terms and the complete generated package. PyPI release files cannot be overwritten.
 
 After a real PyPI release:
 
